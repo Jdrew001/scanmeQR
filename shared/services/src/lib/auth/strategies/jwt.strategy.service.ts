@@ -5,7 +5,10 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { UsersService } from '../../users/users.service';
 
 @Injectable()
-export class JwtStrategyService extends PassportStrategy(Strategy) {
+export class JwtStrategyService extends PassportStrategy(
+  Strategy,
+  'jwt',
+) {
   constructor(
     private configService: ConfigService,
     private usersService: UsersService,
@@ -18,7 +21,23 @@ export class JwtStrategyService extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    const user = await this.usersService.findOne(payload.sub);
-    return user;
+    // Include masquerade info if present
+    if (payload.masquerading && payload.originalUserId) {
+      return {
+        id: payload.sub,
+        email: payload.email,
+        role: payload.role,
+        timezone: payload.timezone,
+        masquerading: true,
+        originalUserId: payload.originalUserId
+      };
+    }
+
+    return {
+      id: payload.sub,
+      email: payload.email,
+      role: payload.role,
+      timezone: payload.timezone
+    };
   }
 }

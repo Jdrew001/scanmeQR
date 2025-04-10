@@ -26,7 +26,7 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const tokens = await this.getTokens(user.id, user.email, user.role);
+    const tokens = await this.getTokens(user.id, user.email, user.role, user.timezone);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
 
     return {
@@ -37,6 +37,7 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
+        timezone: user.timezone
       },
     };
   }
@@ -57,7 +58,7 @@ export class AuthService {
       throw new UnauthorizedException('Access denied');
     }
 
-    const tokens = await this.getTokens(user.id, user.email, user.role);
+    const tokens = await this.getTokens(user.id, user.email, user.role, user.timezone);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
 
     return tokens;
@@ -78,26 +79,30 @@ export class AuthService {
 
   async getProfile(userId: string) {
     const user = await this.usersService.findOne(userId);
-    const subscription = await this.subscriptionsService.findOneByUserId(userId);
+
+    if (!user)
+      throw new UnauthorizedException('User not found');
+
+    const subscriptionDto = {
+      plan: user.subscription?.plan,
+      status: user.subscription?.status,
+      maxQrCodes: user.subscription?.maxQrCodes,
+      maxScansPerQr: user.subscription?.maxScansPerQr,
+      isDynamicAllowed: user.subscription?.isDynamicAllowed,
+      startDate: user.subscription?.startDate,
+      endDate: user.subscription?.endDate,
+    }
 
     // Remove sensitive information before returning to client
-    const { password, refreshToken, ...userInfo } = user;
+    const { password, refreshToken, subscription, ...userInfo } = user;
 
     return {
       user: userInfo,
-      subscription: {
-        plan: subscription.plan,
-        status: subscription.status,
-        maxQrCodes: subscription.maxQrCodes,
-        maxScansPerQr: subscription.maxScansPerQr,
-        isDynamicAllowed: subscription.isDynamicAllowed,
-        startDate: subscription.startDate,
-        endDate: subscription.endDate,
-      },
+      subscription: subscriptionDto
     };
   }
 
-  async getTokens(userId: string, email: string, role: string) {
+  async getTokens(userId: string, email: string, role: string, timezone: string) {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         {
@@ -134,7 +139,7 @@ export class AuthService {
     const user = await this.usersService.create(registerDto);
 
     // Generate access and refresh tokens
-    const tokens = await this.getTokens(user.id, user.email, user.role);
+    const tokens = await this.getTokens(user.id, user.email, user.role, user.timezone);
 
     // Store the refresh token
     await this.updateRefreshToken(user.id, tokens.refreshToken);

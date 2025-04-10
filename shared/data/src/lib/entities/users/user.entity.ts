@@ -1,7 +1,7 @@
 import {
   Column,
   CreateDateColumn,
-  Entity, ManyToOne,
+  Entity, JoinColumn, ManyToOne,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -49,8 +49,12 @@ export class User {
   qrCodes!: QrCode[];
 
   @ManyToOne(() => Subscription, subscription => subscription.users)
+  @JoinColumn()
   subscription!: Subscription;
 
   @Column({ nullable: true })
   refreshToken: string;
+
+  @Column({ default: 'UTC' })
+  timezone: string;
 }

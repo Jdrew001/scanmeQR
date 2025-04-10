@@ -1,18 +1,18 @@
 import { Controller, Post, Body, UseGuards, Request, Get } from '@nestjs/common';
 import { AuthService } from '../../../../../shared/services/src/lib/auth/auth.service';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { LocalAuthGuard } from '../../../../../shared/util/src/lib/auth/guards/local-auth.guard';
 import { LoginDto } from '../../../../../shared/data/src/lib/dto/auth/login.dto';
 import { RegisterDto } from '../../../../../shared/data/src/lib/dto/auth/register.dto';
-import { JwtAuthGuard } from '../../../../../shared/util/src/lib/auth/guards/jwt-auth.guard';
 import { RefreshAuthGuardService } from '../../../../../shared/services/src/lib/auth/guards/refresh-auth.guard.service';
+import { LocalAuthGuardService } from '../../../../../shared/services/src/lib/auth/guards/local-auth.guard.service';
+import { JwtAuthGuardService } from '../../../../../shared/services/src/lib/auth/guards/jwt-auth.guard.service';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @UseGuards(LocalAuthGuard)
+  @UseGuards(LocalAuthGuardService)
   @Post('login')
   @ApiOperation({ summary: 'User login' })
   @ApiResponse({ status: 200, description: 'User successfully logged in' })
@@ -27,7 +27,7 @@ export class AuthController {
     return this.authService.register(registerDto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuardService)
   @Get('profile')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get user profile' })
@@ -44,9 +44,10 @@ export class AuthController {
     return this.authService.refreshTokens(userId, refreshToken);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuardService)
   @Post('logout')
-  logout(@Request() req) {
-    return this.authService.logout(req.user.id);
+  async logout(@Request() req) {
+    await this.authService.logout(req.user.id);
+    return { message: 'Logout successful' };
   }
 }

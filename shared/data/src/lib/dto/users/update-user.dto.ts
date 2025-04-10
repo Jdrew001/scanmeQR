@@ -1,8 +1,9 @@
 import { PartialType } from '@nestjs/swagger';
-import { IsString, IsOptional, MinLength, IsEnum } from 'class-validator';
+import { IsString, IsOptional, MinLength, IsEnum, IsDate } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRole } from '../../entities/users/user.entity';
 import { Subscription } from '../../entities/subscriptions/subscription.entity';
+import { Type } from 'class-transformer';
 
 export class UpdateUserDto {
   @ApiProperty({ required: false })
@@ -30,4 +31,19 @@ export class UpdateUserDto {
   @IsString()
   @IsOptional()
   refreshToken?: string | null;
+
+  @ApiProperty({ required: false, description: 'ID of user being masqueraded as' })
+  @IsString()
+  @IsOptional()
+  masqueradingAs?: string | null;
+
+  @ApiProperty({ required: false, description: 'Timestamp when masquerade began' })
+  @IsDate()
+  @IsOptional()
+  @Type(() => Date)
+  masqueradeStartTime?: Date | null;
+
+  @ApiProperty({ required: false, description: 'Reference to subscription' })
+  @IsOptional()
+  subscription?: Subscription;
 }

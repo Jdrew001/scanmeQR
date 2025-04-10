@@ -26,4 +26,9 @@ export class RegisterDto {
   @IsEnum(UserRole)
   @IsOptional()
   role?: UserRole;
+
+  @ApiProperty({ example: 'America/Chicago', required: false })
+  @IsString()
+  @IsOptional()
+  timezone?: string;
 }

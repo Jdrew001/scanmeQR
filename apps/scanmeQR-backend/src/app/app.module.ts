@@ -13,11 +13,15 @@ import { QrCodeScan } from '../../../../shared/data/src/lib/entities/analytics/q
 import { QrCode } from '../../../../shared/data/src/lib/entities/qr-codes/qr-code.entity';
 import {
   Subscription,
-  SubscriptionPlan
+  SubscriptionPlan,
 } from '../../../../shared/data/src/lib/entities/subscriptions/subscription.entity';
-import { User, UserRole } from '../../../../shared/data/src/lib/entities/users/user.entity';
+import {
+  User,
+  UserRole,
+} from '../../../../shared/data/src/lib/entities/users/user.entity';
 import { UsersService } from '../../../../shared/services/src/lib/users/users.service';
 import { SubscriptionsService } from '../../../../shared/services/src/lib/subscriptions/subscriptions.service';
+import { MasqueradeController } from './masquerade/masquerade.controller';
 
 @Module({
   imports: [
@@ -32,16 +36,11 @@ import { SubscriptionsService } from '../../../../shared/services/src/lib/subscr
         username: configService.get('DB_USERNAME', 'postgres'),
         password: configService.get('DB_PASSWORD', 'password'),
         database: configService.get('DB_NAME', 'qrcode_db'),
-        entities: [
-          QrCodeScan,
-          QrCode,
-          Subscription,
-          User
-        ],
+        entities: [QrCodeScan, QrCode, Subscription, User],
         synchronize: true,
         logging: true,
         logger: 'advanced-console',
-      })
+      }),
     }),
     AuthModule,
     UsersModule,
@@ -49,13 +48,13 @@ import { SubscriptionsService } from '../../../../shared/services/src/lib/subscr
     SubscriptionsModule,
     AnalyticsModule,
   ],
-  controllers: [AppController, RedirectController],
+  controllers: [AppController, RedirectController, MasqueradeController],
   providers: [AppService],
 })
 export class AppModule {
   constructor(
     private usersService: UsersService,
-    private subscriptionsService: SubscriptionsService,
+    private subscriptionsService: SubscriptionsService
   ) {}
 
   async onModuleInit() {

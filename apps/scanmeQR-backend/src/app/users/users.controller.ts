@@ -1,14 +1,14 @@
 import { Body, Controller, Get, Request, Param, Patch, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../../../../../shared/util/src/lib/auth/guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { UsersService } from '../../../../../shared/services/src/lib/users/users.service';
 import { User } from '../../../../../shared/data/src/lib/entities/users/user.entity';
 import { UpdateUserDto } from '../../../../../shared/data/src/lib/dto/users/update-user.dto';
+import { JwtAuthGuardService } from '../../../../../shared/services/src/lib/auth/guards/jwt-auth.guard.service';
 
 @ApiTags('users')
 @Controller('users')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuardService)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 

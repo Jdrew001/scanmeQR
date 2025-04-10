@@ -7,6 +7,7 @@ import { CreateQrCodeDto } from '../../../../data/src/lib/dto/qr-codes/create-qr
 import { User, UserRole } from '../../../../data/src/lib/entities/users/user.entity';
 import { UpdateQrCodeDto } from '../../../../data/src/lib/dto/qr-codes/update-qr-code.dto';
 import * as QRCode from 'qrcode';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class QrCodesService {
@@ -14,6 +15,7 @@ export class QrCodesService {
     @InjectRepository(QrCode)
     private qrCodesRepository: Repository<QrCode>,
     private subscriptionsService: SubscriptionsService,
+    private configService: ConfigService
   ) {}
 
   async create(createQrCodeDto: CreateQrCodeDto, user: User): Promise<QrCode> {
@@ -94,7 +96,7 @@ export class QrCodesService {
   generateQrCodeImage(qrCode: QrCode): Promise<string> {
     return new Promise((resolve, reject) => {
       const url = qrCode.type === QrCodeType.DYNAMIC
-        ? `${process.env.API_URL}/redirect/${qrCode.id}`
+        ? `${this.configService.get('API_URL')}/api/redirect/${qrCode.id}`
         : qrCode.targetUrl;
 
       const options = {

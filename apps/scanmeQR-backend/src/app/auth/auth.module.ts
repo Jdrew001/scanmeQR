@@ -3,14 +3,17 @@ import { AuthController } from './auth.controller';
 import { AuthService } from '../../../../../shared/services/src/lib/auth/auth.service';
 import { UsersModule } from '../users/users.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
-import { LocalStrategy } from '../../../../../shared/util/src/lib/auth/strategies/local.strategy';
-import { JwtStrategy } from '../../../../../shared/util/src/lib/auth/strategies/jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import {
   RefreshStrategyService
 } from '../../../../../shared/services/src/lib/auth/strategies/refresh.strategy.service';
+import { JwtAuthGuardService } from '../../../../../shared/services/src/lib/auth/guards/jwt-auth.guard.service';
+import { LocalStrategyService } from '../../../../../shared/services/src/lib/auth/strategies/local.strategy.service';
+import { JwtStrategyService } from '../../../../../shared/services/src/lib/auth/strategies/jwt.strategy.service';
+import { MasqueradeController } from '../masquerade/masquerade.controller';
+import { MasqueradeService } from '../../../../../shared/services/src/lib/masquerade/masquerade.service';
 
 @Module({
   imports: [
@@ -21,18 +24,19 @@ import {
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get('JWT_ACCESS_SECRET'),
+        secret: configService.get('JWT_SECRET'),
         signOptions: { expiresIn: '15m' },
       }),
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, MasqueradeController],
   providers: [
     AuthService,
-    JwtStrategy,
-    LocalStrategy,
-    RefreshStrategyService
+    JwtStrategyService,
+    LocalStrategyService,
+    RefreshStrategyService,
+    MasqueradeService
   ],
-  exports: [AuthService],
+  exports: [AuthService, MasqueradeService],
 })
 export class AuthModule {}

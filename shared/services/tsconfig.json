@@ -15,6 +15,7 @@
     "strictPropertyInitialization": false,
     "noImplicitAny": false,
     "baseUrl": ".",
+    "sourceMap": true,
     "paths": {
       "*": ["node_modules/*"]
     }

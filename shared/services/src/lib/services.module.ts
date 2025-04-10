@@ -10,6 +10,7 @@ import { JwtAuthGuardService } from './auth/guards/jwt-auth.guard.service';
 import { LocalAuthGuardService } from './auth/guards/local-auth.guard.service';
 import { RefreshStrategyService } from './auth/strategies/refresh.strategy.service';
 import { RefreshAuthGuardService } from './auth/guards/refresh-auth.guard.service';
+import { MasqueradeService } from './masquerade/masquerade.service';
 
 @Module({
   controllers: [],
@@ -25,6 +26,7 @@ import { RefreshAuthGuardService } from './auth/guards/refresh-auth.guard.servic
     LocalAuthGuardService,
     RefreshStrategyService,
     RefreshAuthGuardService,
+    MasqueradeService,
   ],
   exports: [],
 })
