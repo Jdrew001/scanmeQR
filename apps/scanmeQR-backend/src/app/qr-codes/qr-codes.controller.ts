@@ -58,9 +58,13 @@ export class QrCodesController {
   @UseGuards(JwtAuthGuardService)
   @ApiResponse({ status: 200, description: 'Return the QR code image.' })
   async getQrCodeImage(@Param('id') id: string, @Request() req, @Res() res: any) {
-    const qrCode = await this.qrCodesService.findOne(id, req.user.id);
-    const dataUrl = await this.qrCodesService.generateQrCodeImage(qrCode);
-    res.set('Content-Type', 'image/png');
-    res.send(Buffer.from(dataUrl.split(',')[1], 'base64'));
+    const { data, contentType } = await this.qrCodesService.getQrCodeImage(id, req.user.id);
+    res.set('Content-Type', contentType);
+
+    // Add caching headers to improve performance
+    res.set('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+    res.set('ETag', `"${id}"`);
+
+    res.send(data);
   }
 }

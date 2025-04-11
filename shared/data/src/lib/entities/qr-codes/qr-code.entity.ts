@@ -67,4 +67,7 @@ export class QrCode {
 
   @OneToMany(() => QrCodeScan, scan => scan.qrCode)
   scans!: QrCodeScan[];
+
+  @Column({ nullable: true })
+  imagePath: string;
 }

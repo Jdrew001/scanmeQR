@@ -7,7 +7,10 @@ import { CreateQrCodeDto } from '../../../../data/src/lib/dto/qr-codes/create-qr
 import { User, UserRole } from '../../../../data/src/lib/entities/users/user.entity';
 import { UpdateQrCodeDto } from '../../../../data/src/lib/dto/qr-codes/update-qr-code.dto';
 import * as QRCode from 'qrcode';
+import * as fs from 'fs';
+import * as path from 'path';
 import { ConfigService } from '@nestjs/config';
+import { QRCodeToFileOptions } from 'qrcode';
 
 @Injectable()
 export class QrCodesService {
@@ -43,7 +46,10 @@ export class QrCodesService {
       user,
     });
 
-    return this.qrCodesRepository.save(qrCode);
+    const savedQrCode = await this.qrCodesRepository.save(qrCode);
+    await this.generateAndStoreQrCodeImage(savedQrCode);
+
+    return savedQrCode;
   }
 
   async findAll(userId: string): Promise<QrCode[]> {
@@ -82,9 +88,14 @@ export class QrCodesService {
       throw new ForbiddenException('Cannot update the URL of a static QR code');
     }
 
-    Object.assign(qrCode, updateQrCodeDto);
+    const updatedQrCode = await this.qrCodesRepository.save(qrCode);
 
-    return this.qrCodesRepository.save(qrCode);
+    // Regenerate the QR code image if relevant properties changed
+    if (updateQrCodeDto.targetUrl || updateQrCodeDto.size || updateQrCodeDto.designOptions) {
+      await this.generateAndStoreQrCodeImage(updatedQrCode);
+    }
+
+    return updatedQrCode;
   }
 
   async remove(id: string, userId: string): Promise<void> {
@@ -150,5 +161,68 @@ export class QrCodesService {
     }
 
     return this.qrCodesRepository.save(qrCode);
+  }
+
+  private async generateAndStoreQrCodeImage(qrCode: QrCode): Promise<void> {
+    // Generate short URL if it's a dynamic QR code
+    const url = qrCode.type === QrCodeType.DYNAMIC
+      ? `${process.env.API_URL}/redirect/${qrCode.id}`
+      : qrCode.targetUrl;
+
+    // Apply design options
+    const options: QRCodeToFileOptions = {
+      errorCorrectionLevel: 'M',
+      margin: 4,
+      width: qrCode.size === 'small' ? 200 : qrCode.size === 'medium' ? 300 : 400,
+      color: {
+        dark: (qrCode.designOptions?.darkColor || '#000000'),
+        light: (qrCode.designOptions?.lightColor || '#ffffff'),
+      }
+    };
+
+    // Ensure storage directory exists
+    const storageDir = path.join(process.cwd(), 'uploads/qrcodes');
+    await fs.promises.mkdir(storageDir, { recursive: true });
+
+    // Generate and save QR code image
+    const filePath = path.join(storageDir, `${qrCode.id}.png`);
+    await this.toFileAsync(filePath, url, options);
+
+    // Update the QR code with the image path
+    qrCode.imagePath = `/qrcodes/${qrCode.id}.png`;
+    await this.qrCodesRepository.save(qrCode);
+  }
+
+  async getQrCodeImage(id: string, userId: string): Promise<{ data: Buffer, contentType: string }> {
+    const qrCode = await this.findOne(id, userId);
+
+    // If we have a stored image, use it
+    if (qrCode.imagePath) {
+      try {
+        const filePath = path.join(process.cwd(), 'uploads', qrCode.imagePath);
+        const imageData = await fs.promises.readFile(filePath);
+        return { data: imageData, contentType: 'image/png' };
+      } catch (error) {
+        console.error(`Error reading QR code image file: ${(error as any)?.message}`);
+        // Fall back to generating on the fly if file reading fails
+      }
+    }
+
+    // Generate on the fly as fallback
+    const dataUrl = await this.generateQrCodeImage(qrCode);
+    const buffer = Buffer.from(dataUrl.split(',')[1], 'base64');
+    return { data: buffer, contentType: 'image/png' };
+  }
+
+  private toFileAsync(path: string, text: string | QRCode.QRCodeSegment[], options: QRCode.QRCodeToFileOptions): Promise<void> {
+    return new Promise((resolve, reject) => {
+      QRCode.toFile(path, text, options, (error) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve();
+        }
+      });
+    });
   }
 }
