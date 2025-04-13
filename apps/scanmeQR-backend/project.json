@@ -6,14 +6,24 @@
   "tags": [],
   "targets": {
     "build": {
-      "executor": "nx:run-commands",
+      "executor": "@nx/webpack:webpack",
       "options": {
-        "command": "webpack-cli build",
-        "args": ["node-env=production"]
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/scanmeQR-backend",
+        "main": "apps/scanmeQR-backend/src/main.ts",
+        "tsConfig": "apps/scanmeQR-backend/tsconfig.app.json",
+        "assets": ["apps/scanmeQR-backend/src/assets"],
+        "webpackConfig": "apps/scanmeQR-backend/webpack.config.js"
       },
       "configurations": {
+        "production": {
+          "optimization": true,
+          "outputHashing": "all"
+        },
         "development": {
-          "args": ["node-env=development"]
+          "optimization": false,
+          "outputHashing": "none"
         }
       }
     },
